@@ -5,6 +5,7 @@ with open("data.txt") as f:
 nodes = []
 class Disk:
     parent = ""
+    net_weight = 0
     def __init__(self, name, weight, children):
         self.name = name
         self.weight = weight
@@ -15,6 +16,7 @@ disks = {}
 balance = {}
 pc = {}
 names = []
+net = 0
 
 for line in data:
     line = line.rstrip()
@@ -30,6 +32,7 @@ for line in data:
 
     balance[arr[0]] = towers
     disks[arr[0]] = (Disk(arr[0], int(arr[1][1:len(arr[1]) - 1]), towers))
+    net += int(arr[1][1:len(arr[1]) - 1])
 
 first = ""
 for name in names:
@@ -41,7 +44,7 @@ for name in names:
     if not found:
         first = name
 nodes = {}
-base = Node(first)
+base = Node(first, weight=disks[first].weight)
 nodes[first] = base
 
 while len(pc) > 0:
@@ -52,8 +55,20 @@ while len(pc) > 0:
             name = child
             par = pc[child]
 
-    nodes[name] = Node(name, parent=nodes[par])
+    nodes[name] = Node(name, weight=disks[name].weight, parent=nodes[par])
     del pc[name]
 
+def calculate_sum(cur):
+    children_sum = 0
+    for child in cur.children:
+        children_sum += calculate_sum(child)
+    return cur.weight + children_sum
+
+for key,val in nodes.items():
+    disks[key].net_weight = calculate_sum(val)
+
 for pre, fill, node in RenderTree(base):
-    print("%s%s" % (pre, node.name))
+    print("%s%s%s" % (pre, node.name, " " + str(disks[node.name].net_weight)))
+
+def all_same(items):
+    return all(x == items[0] for x in items)
